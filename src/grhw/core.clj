@@ -1,6 +1,6 @@
-(ns grhw.core)
+(ns grhw.core
+  (:require [clojure.string :as s]))
 
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
+(defn -main
+  [& files]
+  (println (str "Files: " (s/join " " files))))
