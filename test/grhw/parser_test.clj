@@ -4,11 +4,14 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [clojure.test.check.clojure-test :refer [defspec]]
-            [grhw.parser :refer :all]
+            [grhw.parser :as parser]
             [grhw.person :refer :all]
+            [clojure.java.io :as io]
+            [clojure.pprint :refer [pprint]]
             [clojure.spec.alpha :as s]
-            [clojure.pprint :refer [pprint]])
-  (:import [grhw.person Person]))
+            [clojure.string :as string])
+  (:import [grhw.person Person]
+           [java.io StringReader]))
 
 
 (def delimiters
@@ -16,7 +19,7 @@
    :comma {:string ", " :regex #"\s*\,\s*"}
    :space {:string " " :regex #"\s+"}})
 
-(def delimiter-generator (s/gen (set (keys delimiters))))
+(def delimiter-generator (gen/fmap delimiters (gen/elements (keys delimiters))))
 
 (def record-generator (s/gen :person/record))
 
@@ -29,14 +32,25 @@
 (defspec test-get-delimiter
   100
   (prop/for-all [rec record-generator
-                 delim (gen/fmap delimiters delimiter-generator)]
+                 delim delimiter-generator]
     (let [line (generate-line rec (:string delim))]
-      (= (.pattern (get-delimiter line)) (.pattern (:regex delim))))))
+      (= (.pattern (parser/get-delimiter line)) (.pattern (:regex delim))))))
 
 (defspec test-line-parse
   100
   (prop/for-all [rec record-generator
-                 delim (gen/fmap delimiters delimiter-generator)]
+                 delim delimiter-generator]
     (let [line (generate-line rec (:string delim))
-          re-delim (get-delimiter line)]
-      (= (map->Person rec) (parse-line line :delimiter re-delim)))))
+          re-delim (parser/get-delimiter line)]
+      (= (map->Person rec) (parser/parse-line line :delimiter re-delim)))))
+
+(defspec test-parse
+  1000
+  (prop/for-all [recs (gen/vector record-generator 0 50)
+                 delim delimiter-generator]
+    (let [source (->> recs
+                     (map #(generate-line % (:string delim)))
+                     (string/join "\n")
+                     (StringReader.)
+                     io/reader)]
+      (= (map map->Person recs) (parser/parse source)))))

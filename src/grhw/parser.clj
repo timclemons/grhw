@@ -1,10 +1,11 @@
 (ns grhw.parser
   (:require [clojure.spec.alpha :as s]
+            [clojure.string :as string]
             [grhw.person :as p])
   (:import [java.util.regex Pattern]
            [java.io BufferedReader]))
 
-(s/def :line/legal-characters (set (str "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+(s/def :line/value-character (set (str "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                         "abcdefghijklmnopqrstuvwxyz"
                                         "0123456789"
                                         "!#$%&'*+-/=?.<>[]{}\\~()")))
@@ -13,27 +14,27 @@
 
 (s/def :line/pipe-delimited
   (s/cat
-    :first (s/+ :line/legal-characters)
+    :first (s/+ :line/value-character)
     :whitespace (s/* :line/whitespace)
     :pipe #{\|}
     :post-whitespace (s/* :line/whitespace)
-    :next :line/legal-characters
+    :next :line/value-character
     :rest (s/* char?)))
 
 (s/def :line/comma-delimited
   (s/cat
-    :first (s/+ :line/legal-characters)
+    :first (s/+ :line/value-character)
     :whitespace (s/* :line/whitespace)
     :comma #{\,}
     :post-whitespace (s/* :line/whitespace)
-    :next :line/legal-characters
+    :next :line/value-character
     :rest (s/* char?)))
 
 (s/def :line/space-delimited
   (s/cat
-    :first (s/+ :line/legal-characters)
+    :first (s/+ :line/value-character)
     :whitespace (s/+ :line/whitespace)
-    :next :line/legal-characters
+    :next :line/value-character
     :rest (s/+ char?)))
 
 (s/def :line/line
@@ -54,21 +55,23 @@
         :space-delimited #"\s+"))))
 
 (defn parse-line
-  "Given a line, parses it and returns the Person record."
+  "Given a line, parses it and returns the resulting Person record."
   [line & {:keys [delimiter] :or {delimiter #"\s+"}}]
   {:pre [(string? line)]
    :post [#(s/valid? :person/person %)]}
   (->>
-    (clojure.string/split line delimiter)
+    (string/split line delimiter)
     (apply p/->Person)))
 
-;; TODO: document
-(defn parse-stream
+(defn parse
+  "Given a reader, parses each line and returns the resulting vector of 
+   Person records."
   [^BufferedReader reader]
-  ;; produce a line-seq
-
-  ;; determine which delimiter is used
-
-  ;; 
-  nil
-  )
+  (if-let [source (line-seq reader)]
+    (when-let [delim (get-delimiter (first source))]
+      (into []
+        (comp
+          (map string/trim)
+          (map #(parse-line % :delimiter delim)))
+        source))
+    []))
