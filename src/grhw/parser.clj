@@ -50,8 +50,8 @@
   (when (s/valid? :line/line (seq line))
     (let [[type & _] (s/conform :line/line (seq line))]
       (case type
-        :pipe-delimited #"\s*\|\s*"
-        :comma-delimited #"\s*\,\s*"
+        :pipe-delimited #"\|"
+        :comma-delimited #"\,"
         :space-delimited #"\s+"))))
 
 (defn parse-line
@@ -61,6 +61,7 @@
    :post [#(s/valid? :person/person %)]}
   (->>
     (string/split line delimiter)
+    (map string/trim)
     (apply p/->Person)))
 
 (defn parse

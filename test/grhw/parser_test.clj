@@ -15,8 +15,8 @@
 
 
 (def delimiters
-  {:pipe {:string " | " :regex #"\s*\|\s*"}
-   :comma {:string ", " :regex #"\s*\,\s*"}
+  {:pipe {:string " | " :regex #"\|"}
+   :comma {:string ", " :regex #"\,"}
    :space {:string " " :regex #"\s+"}})
 
 (def delimiter-generator (gen/fmap delimiters (gen/elements (keys delimiters))))
@@ -34,7 +34,10 @@
   (prop/for-all [rec record-generator
                  delim delimiter-generator]
     (let [line (generate-line rec (:string delim))]
-      (= (.pattern (parser/get-delimiter line)) (.pattern (:regex delim))))))
+      (is
+        (=
+          (.pattern (parser/get-delimiter line))
+          (.pattern (:regex delim)))))))
 
 (defspec test-line-parse
   100
@@ -42,10 +45,13 @@
                  delim delimiter-generator]
     (let [line (generate-line rec (:string delim))
           re-delim (parser/get-delimiter line)]
-      (= (map->Person rec) (parser/parse-line line :delimiter re-delim)))))
+      (is
+        (=
+          (map->Person rec)
+          (parser/parse-line line :delimiter re-delim))))))
 
 (defspec test-parse
-  1000
+  100
   (prop/for-all [recs (gen/vector record-generator 0 50)
                  delim delimiter-generator]
     (let [source (->> recs
@@ -53,4 +59,7 @@
                      (string/join "\n")
                      (StringReader.)
                      io/reader)]
-      (= (map map->Person recs) (parser/parse source)))))
+      (is
+        (=
+          (map map->Person recs)
+          (parser/parse source))))))

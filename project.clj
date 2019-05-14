@@ -9,4 +9,7 @@
   :repl-options {:init-ns grhw.core}
 
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]
-                   :plugins [[lein-cloverage "1.1.1"]]}})
+                   :plugins [[lein-cloverage "1.1.1"]]
+                   }}
+
+  :aliases {"genfiles" ["run" "-m" "grhw.genfiles" "target"]})
