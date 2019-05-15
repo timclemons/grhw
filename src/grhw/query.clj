@@ -13,10 +13,7 @@
 (def gender-last-name-sort
   (juxt gender-sort-order :last-name))
 
-(defn date-of-birth-sort
-  [^Person {:keys [date-of-birth]}]
-    (let [[m d y] (->> (s/split date-of-birth #"/") (map #(Integer/parseInt %)))]
-      [y m d]))
+(def date-of-birth-sort :date-of-birth)
 
 (defn last-name-sort
   [^Person {:keys [last-name]}]

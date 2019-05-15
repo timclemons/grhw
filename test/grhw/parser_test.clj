@@ -6,13 +6,15 @@
             [clojure.test.check.clojure-test :refer [defspec]]
             [grhw.parser :as parser]
             [grhw.person :refer :all]
+            [grhw.query :as query]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
             [clojure.spec.alpha :as s]
             [clojure.string :as string])
   (:import [grhw.person Person]
-           [java.io StringReader]))
-
+           [java.io StringReader]
+           [java.util Date]
+           [java.text SimpleDateFormat]))
 
 (def delimiters
   {:pipe {:string " | " :regex #"\|"}
@@ -23,21 +25,27 @@
 
 (def record-generator (s/gen :person/record))
 
+(def date-formatter (SimpleDateFormat. "MM/dd/yyyy"))
+
 (defn generate-line
   [{:keys [first-name last-name gender favorite-color date-of-birth]} delimiter]
-    (clojure.string/join
-      delimiter
-      [first-name last-name gender favorite-color date-of-birth])) 
+    (let [dob (.format date-formatter date-of-birth)]
+      (clojure.string/join
+        delimiter
+        [first-name last-name gender favorite-color dob])))
+
+(defn date->string
+  [rec]
+  (update-in rec [:date-of-birth] #(.format date-formatter %)))
 
 (defspec test-get-delimiter
   100
   (prop/for-all [rec record-generator
                  delim delimiter-generator]
     (let [line (generate-line rec (:string delim))]
-      (is
-        (=
-          (.pattern (parser/get-delimiter line))
-          (.pattern (:regex delim)))))))
+      (is (=
+        (.pattern (parser/get-delimiter line))
+        (.pattern (:regex delim)))))))
 
 (defspec test-line-parse
   100
@@ -45,10 +53,10 @@
                  delim delimiter-generator]
     (let [line (generate-line rec (:string delim))
           re-delim (parser/get-delimiter line)]
-      (is
-        (=
-          (map->Person rec)
-          (parser/parse-line line :delimiter re-delim))))))
+      (is (=
+        (-> rec (date->string) (map->Person))
+        (parser/parse-line line
+          :delimiter re-delim))))))
 
 (defspec test-parse
   100
@@ -59,7 +67,6 @@
                      (string/join "\n")
                      (StringReader.)
                      io/reader)]
-      (is
-        (=
-          (map map->Person recs)
-          (parser/parse source))))))
+      (is (=
+        (sequence (comp (map date->string) (map map->Person)) recs)
+        (->> (parser/parse source) (map date->string)))))))

@@ -5,10 +5,6 @@
             [grhw.parser :as p]
             [grhw.query :as q]))
 
-
-;; TODO:
-;; * change storage of date-of-birth non-string type
-
 (defn- ingest-file
   [filename]
   (with-open [file (io/reader filename)]

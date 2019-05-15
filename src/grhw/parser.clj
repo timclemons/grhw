@@ -3,7 +3,8 @@
             [clojure.string :as string]
             [grhw.person :as p])
   (:import [java.util.regex Pattern]
-           [java.io BufferedReader]))
+           [java.io BufferedReader]
+           [java.text SimpleDateFormat]))
 
 (s/def :line/value-character (set (str "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                         "abcdefghijklmnopqrstuvwxyz"
@@ -56,12 +57,15 @@
 
 (defn parse-line
   "Given a line, parses it and returns the resulting Person record."
-  [line & {:keys [delimiter] :or {delimiter #"\s+"}}]
+  [line & {:keys [delimiter post-fn]
+           :or {delimiter #"\s+"
+                post-fn (repeat identity)}}]
   {:pre [(string? line)]
    :post [#(s/valid? :person/person %)]}
   (->>
     (string/split line delimiter)
     (map string/trim)
+    (map #(%1 %2) post-fn)
     (apply p/->Person)))
 
 (defn parse
@@ -70,9 +74,11 @@
   [^BufferedReader reader]
   (if-let [source (line-seq reader)]
     (when-let [delim (get-delimiter (first source))]
-      (into []
-        (comp
-          (map string/trim)
-          (map #(parse-line % :delimiter delim)))
-        source))
+      (let [date-formatter (SimpleDateFormat. "MM/dd/yyyy")
+            formatter [identity identity identity identity #(.parse date-formatter %)]]
+        (into []
+          (comp
+            (map string/trim)
+            (map #(parse-line % :delimiter delim :post-fn formatter)))
+          source)))
     []))
