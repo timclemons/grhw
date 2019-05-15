@@ -4,21 +4,21 @@
             [clojure.spec [alpha :as spec]]
             [clojure.test.check [generators :as gen]]))
 
+(def non-empty-identifier
+  (gen/not-empty gen/string-alphanumeric))
+
 (def gender-generator
   (gen/frequency [[5 (gen/return "female")]
                    [5 (gen/return "male")]
-                   [1 gen/string-alphanumeric]]))
+                   [1 non-empty-identifier]]))
 
 (def date-of-birth-generator
   (gen/fmap
-    (partial apply (partial format "%d%02d%02d"))
+    (partial apply (partial format "%d/%02d/%d"))
     (gen/tuple
-      (gen/choose 1870 2018)
       (gen/choose 1 12)
-      (gen/choose 1 31))))
-
-(def non-empty-identifier
-  (gen/not-empty gen/string-alphanumeric))
+      (gen/choose 1 31)
+      (gen/choose 1870 2018))))
 
 (def person-generator
   (gen/fmap
