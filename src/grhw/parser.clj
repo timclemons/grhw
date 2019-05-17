@@ -4,8 +4,7 @@
             [grhw.person :as p])
   (:import [java.util.regex Pattern]
            [java.io BufferedReader]
-           [java.text SimpleDateFormat]
-           [clojure.lang ArityException]))
+           [java.text SimpleDateFormat]))
 
 (s/def :line/value-character (set (str "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                         "abcdefghijklmnopqrstuvwxyz"
@@ -56,20 +55,28 @@
         :comma-delimited #"\,"
         :space-delimited #"\s+"))))
 
+(def date-format "MM/dd/yyyy")
+
+(defn post-parse-fns
+  []
+  (let [date-formatter (SimpleDateFormat. date-format)]
+    [identity identity identity identity #(.parse date-formatter %)]))
+
 (defn parse-line
   "Given a line, parses it and returns the resulting Person record."
-  [line & {:keys [delimiter post-fn]
-           :or {delimiter (get-delimiter line)
-                post-fn (repeat identity)}}]
+  [line & {:keys [delimiter]
+           :or {delimiter (get-delimiter line)}}]
   {:pre [(string? line)]
    :post [#(s/valid? :person/person %)]}
-  (try
-    (->>
-      (string/split line delimiter)
-      (map string/trim)
-      (map #(%1 %2) post-fn)
-      (apply p/->Person))
-    (catch ArityException e nil)))
+  (let [post-fns (post-parse-fns)]
+    (when (instance? Pattern delimiter)
+      (try
+        (->>
+          (string/split line delimiter)
+          (map string/trim)
+          (map #(%1 %2) post-fns)
+          (apply p/->Person))
+        (catch Exception e nil)))))
 
 (defn parse
   "Given a reader, parses each line and returns the resulting vector of 
