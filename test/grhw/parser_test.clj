@@ -55,8 +55,9 @@
           re-delim (parser/get-delimiter line)]
       (is (=
         (-> rec (date->string) (map->Person))
-        (parser/parse-line line
-          :delimiter re-delim))))))
+        (->
+         (parser/parse-line line :delimiter re-delim)
+         (date->string)))))))
 
 (defspec test-parse
   100
