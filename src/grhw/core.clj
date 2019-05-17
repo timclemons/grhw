@@ -3,7 +3,8 @@
             [clojure.pprint :refer [pprint]]
             [clojure.string :as s]
             [grhw.parser :as p]
-            [grhw.query :as q]))
+            [grhw.query :as q]
+            [grhw.http :as http]))
 
 (defn- ingest-file
   [filename]
@@ -14,15 +15,14 @@
   [& files]
   (let [records (mapcat ingest-file files)]
     (println "GENDER SORT:")
-    (doseq [rec (sort-by q/gender-last-name-sort records)]
-      (pprint rec))
+    (pprint (q/sort-by-gender-last-name records))
 
     (println)
     (println "DOB SORT:")
-    (doseq [rec (sort-by q/date-of-birth-sort records)]
-      (pprint rec))
+    (pprint (q/sort-by-date-of-birth records))
 
     (println)
     (println "LAST NAME SORT:")
-    (doseq [rec (sort-by q/last-name-sort (comp - compare) records)]
-      (pprint rec))))
+    (pprint (q/sort-by-last-name records))
+
+    (http/start records)))

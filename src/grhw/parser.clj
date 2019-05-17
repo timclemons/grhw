@@ -58,7 +58,7 @@
 (defn parse-line
   "Given a line, parses it and returns the resulting Person record."
   [line & {:keys [delimiter post-fn]
-           :or {delimiter #"\s+"
+           :or {delimiter (get-delimiter line)
                 post-fn (repeat identity)}}]
   {:pre [(string? line)]
    :post [#(s/valid? :person/person %)]}
