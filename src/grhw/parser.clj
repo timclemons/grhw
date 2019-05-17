@@ -4,7 +4,8 @@
             [grhw.person :as p])
   (:import [java.util.regex Pattern]
            [java.io BufferedReader]
-           [java.text SimpleDateFormat]))
+           [java.text SimpleDateFormat]
+           [clojure.lang ArityException]))
 
 (s/def :line/value-character (set (str "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                         "abcdefghijklmnopqrstuvwxyz"
@@ -62,11 +63,13 @@
                 post-fn (repeat identity)}}]
   {:pre [(string? line)]
    :post [#(s/valid? :person/person %)]}
-  (->>
-    (string/split line delimiter)
-    (map string/trim)
-    (map #(%1 %2) post-fn)
-    (apply p/->Person)))
+  (try
+    (->>
+      (string/split line delimiter)
+      (map string/trim)
+      (map #(%1 %2) post-fn)
+      (apply p/->Person))
+    (catch ArityException e nil)))
 
 (defn parse
   "Given a reader, parses each line and returns the resulting vector of 
@@ -78,6 +81,7 @@
             formatter [identity identity identity identity #(.parse date-formatter %)]]
         (into []
           (comp
+            (remove nil?)
             (map string/trim)
             (map #(parse-line % :delimiter delim :post-fn formatter)))
           source)))
