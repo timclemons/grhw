@@ -25,7 +25,7 @@
 
 (def record-generator (s/gen :person/record))
 
-(def date-formatter (SimpleDateFormat. "MM/dd/yyyy"))
+(def date-formatter (SimpleDateFormat. parser/date-format))
 
 (defn generate-line
   [{:keys [first-name last-name gender favorite-color date-of-birth]} delimiter]

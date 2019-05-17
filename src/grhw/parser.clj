@@ -63,7 +63,8 @@
     [identity identity identity identity #(.parse date-formatter %)]))
 
 (defn parse-line
-  "Given a line, parses it and returns the resulting Person record."
+  "Given a line, parses it and returns the resulting Person record.
+   Returns nil if an error occurs during parsing."
   [line & {:keys [delimiter]
            :or {delimiter (get-delimiter line)}}]
   {:pre [(string? line)]

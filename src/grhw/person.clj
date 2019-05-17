@@ -6,11 +6,16 @@
 (defrecord Person [first-name last-name gender favorite-color date-of-birth])
 
 (s/def :person/identifier
-  (s/and string? #(re-matches #"[^\s\|\,]+" %)))
+  (s/and string? seq #(re-matches #"[^\s\|\,]+" %)))
 
 (s/def :person/first-name :person/identifier)
 (s/def :person/last-name :person/identifier)
-(s/def :person/gender :person/identifier)
+(s/def :person/gender
+  (s/with-gen :person/identifier
+    (fn [] (gen/frequency [[5 (gen/return "female")]
+                           [5 (gen/return "male")]
+                           [1 (s/gen :person/identifier)]]))))
+
 (s/def :person/favorite-color :person/identifier)
 (s/def :person/date-of-birth
   (s/with-gen #(instance? Date %)
