@@ -1,8 +1,11 @@
 (ns grhw.genfiles
   (:require [grhw.parser-test :refer :all]
+            [grhw.parser :as parser]
             [grhw.person :refer :all]
             [clojure.spec [alpha :as spec]]
-            [clojure.test.check [generators :as gen]]))
+            [clojure.test.check [generators :as gen]])
+  (:import [java.text SimpleDateFormat]
+           [java.util Date]))
 
 (def non-empty-identifier
   (gen/not-empty gen/string-alphanumeric))
@@ -32,7 +35,10 @@
 
 (defn -main
   [target-dir]
-  (let [records (gen/generate (gen/vector person-generator 200))
+  (let [date-formatter (SimpleDateFormat. parser/date-format)
+        records (->> (gen/generate (gen/vector person-generator 200))
+                  (map (fn [rec]
+                         (update rec :date-of-birth #(.parse date-formatter %)))))
         delim (gen/generate (gen/fmap :string delimiter-generator))
         lines (map #(generate-line % delim) records)]
     (print (clojure.string/join "\n" lines))))

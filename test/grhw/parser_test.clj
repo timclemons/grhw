@@ -36,7 +36,7 @@
 
 (defn date->string
   [rec]
-  (update-in rec [:date-of-birth] #(.format date-formatter %)))
+  (update rec :date-of-birth #(.format date-formatter %)))
 
 (defspec test-get-delimiter
   100
