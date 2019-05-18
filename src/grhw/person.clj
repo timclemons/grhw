@@ -15,7 +15,6 @@
     (fn [] (gen/frequency [[5 (gen/return "female")]
                            [5 (gen/return "male")]
                            [1 (s/gen :person/identifier)]]))))
-
 (s/def :person/favorite-color :person/identifier)
 (s/def :person/date-of-birth
   (s/with-gen #(instance? Date %)

@@ -38,7 +38,8 @@
           queried-recs (->> response
                          :body
                          (#(json/parse-string % keyword))
-                         (map (fn [rec] (update-in rec [:date-of-birth] #(.parse date-formatter %)))))]
+                         (map (fn [rec]
+                                (update rec :date-of-birth #(.parse date-formatter %)))))]
       (is (= (:status response) 200))
       (is (= (count recs) (count queried-recs)))
       (is (->> queried-recs
@@ -58,3 +59,21 @@
             (every? #(sorted-pair? %
                        (comp s/lower-case :last-name)
                        :compfn (comp - compare))))))))
+
+(defspec test-post-records-endpoint
+  100
+  (prop/for-all [recs (gen/vector pt/record-generator)
+                 to-post pt/record-generator
+                 delimiter pt/delimiter-generator]
+    (let [handler (http/http-routes recs)
+          date-formatter (SimpleDateFormat. parser/date-format)
+          line (pt/generate-line to-post (:string delimiter))
+          post-response (handler (-> (mock/request :post "/records")
+                                   (mock/body line)))
+          get-response (handler (mock/request :get "/records/gender"))
+          queried-recs (-> get-response :body (json/parse-string keyword))]
+            (is (= (:status post-response) 201))
+            (is (= (count queried-recs) (inc (count recs))))
+            (is (some
+                  #{(update to-post :date-of-birth #(.format date-formatter %))}
+                  queried-recs)))))
