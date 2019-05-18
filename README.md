@@ -9,7 +9,10 @@ To run the data service, run the following leiningen command:
     lein run <file-1> ... <file-n>
 
 Each file provided on the command is parsed and incorporated into the initial
-data service state.  To generate a sample data file run the following:
+data service state.  Prior to this, the service will print to stdout the
+result of various sorting algorithms on the parsed data.
+
+To generate a sample data file run the following:
 
     lein genfiles >data.txt
 
